@@ -2,5 +2,5 @@
 # Run it, read the last line, then fix it.
 
 record_id = "R-004"
-
-print(record_ID)
+print(record_id)
+#print(record_ID)
