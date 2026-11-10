@@ -8,44 +8,57 @@ Date  :
 
 Run it:   python template.py
 """
-def check_record(value,limit):
-    difference=value-limit
-    percent=(difference/limit)*100
-    if value>limit:
-       status="OVER"
-    elif value< limit:
-        status ="Under"
+def check_records(value, limit):
+    difference = limit - value
+    percent = (value/limit) * 100
+    if percent >= 100:
+        status = "OVER LIMIT"
+    elif percent >= 90:
+        status = "WARNING"
     else:
-        status="Equal"
-    return difference, percent , status
+        status = "OK"
+    return difference, percent, status
 
-def print_report(label,limit,value):
-    difference, percent, status =check_record(value,limit)
+def print_report(label, value, limit, difference, percent, status):
+    print()
+    print("=" * 34)
+    print(f"  RECORD CHECK  -  {label}")
+    print("=" * 34)
 
-    print("label:",label)
-    print("value:",value)
-    print("limit:",limit)
-    print("Differnece:",difference)
-    print("percent:",round(percent,2),"%")
-    print("status:",status)
+    print(f"{'Failed Logins':<17} :{value:>10.2f}")
+    print(f"{'Total Logins':<17} :{limit:>10.2f}")
+    print(f"{'Succesful Logins':<17} :{difference:>10.2f}")
+    print(f"{'Failure Percent':<17} :{percent:>10.2f}%")
+    print(f"{'Status':<17} : {status:>9}")
+    print("=" * 34)
 
 def load_records(path):
-    records=[]
-    with open(path,"r")as file:
-        for line in file:
-            parts=line.strip().split(",")
-            label =parts[0]
-            value = float(parts[1])
-            limit=float(parts[2])
-            records.append({ "label":label,
-                             "value":value,
-                              "limit":limit
-                            })
-    return records
+    records_list = []
+    try:
+        with open(path, "r") as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                parts = line.strip().split(",")
+                records_list.append({
+                    "label": parts[0],
+                    "value": float(parts[1]),
+                    "limit": float(parts[2])
+                })
+        return records_list
+    except FileNotFoundError:
+        print(f"Error: The file '{path}' could not be found.")
+        return []
 
-records=load_records("data.txt")
+records = load_records("lab/records_sample.txt")
+over_limit_counting = 0
 
-for record in records:
-    print_report(record["label"],
-                 record["value"],
-                 record["limit"])
+with open("results.txt", "w") as out_file:
+    for rec in records:
+        difference, percent, status = check_records(rec["value"], rec["limit"])
+        if status == "OVER LIMIT":
+            over_limit_counting += 1  
+        print_report(rec["label"], rec["value"], rec["limit"], difference, percent, status)
+        out_file.write(f"{rec['label']},{status}\n")
+
+print(f"Failed Logins over limit : {over_limit_counting}")
